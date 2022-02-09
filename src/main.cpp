@@ -2,7 +2,7 @@
 #include <iostream>
 #include <vector>
 
-#include "lexer.h"
+#include "../include/lexer.h"
 
 int main(int argc, char *argv[]) {
     if (argc > 1) {

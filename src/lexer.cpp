@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
-#include "lexer.h"
+#include "../include/lexer.h"
 
 char c;
 FILE* input_file;
