@@ -1,0 +1,3 @@
+#!/bin/bash
+
+g++ parser.cpp lexer.cpp main.cpp -o main
