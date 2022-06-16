@@ -1,0 +1,75 @@
+using cobalt.std;
+using cobalt.math;
+
+// Comments
+
+/*
+ Block Comments
+*/
+
+public class MyProgram {
+
+    // *** Instance Variables ***
+
+    // (Option 1)
+    // Since mutable variables are frequently used, you should have to specify if the variable is intended
+    // to be immutable/constant
+
+    let x: int = 0;             // Mutable type
+    let y: const int = 0;       // Immutable type
+
+
+    // (Option 2)
+    // Assume all variables are immutable, and only allow them to be mutable if specified. Helpful in compiled, memory
+    // safe languages, but probably not for an interpreted language that sits in memory?
+
+    let mut x: int = 0;         // Mutable type
+    let y: int = 0;             // Immutable type
+
+
+    // *** Main and Declaring functions ***
+    
+    // I think scripts should work similar to python, but not be as
+    // funky/verbose with function names
+
+    // If there is no main function defined within the script, the interpreter should
+    // process the file sequentially like Python,
+    // Otherwise, the main function is ran and operates like any normal program
+
+    // Best practice would have main return an integer, however it could be
+    // void or return any other type
+
+
+    // (Option 1, C/C++/Java style)
+    private int main1() {
+        // Some code
+        return 0;
+    }
+
+    // (Option 2, Swift/Rust style)
+    private func main() => int {
+        // Some code
+        return 0;
+    }
+
+    // (Option 3, Ada style)
+    private func main() returns int {
+        // Some code
+        return 0;
+    }
+
+    // *** Handling Multiple Main Methods ***
+
+    // I feel that classes should be able to have their own main methods, and it could be
+    // determined which one is the entry point by requiring the user to provide an entry point
+    // 
+    //  (Example)
+    //      -Multiple classes in one file, each with their own main method
+    //      -Specify the script along with the class when opening with Cobalt, and it will run that specific class
+    //      -Attempt to run the class's main method. Error if it doesn't exist
+    //      -If there are multiple mains and one isn't specific, just error
+    //
+    //      Ex: cobalt script.cblt --main MyClass
+    //
+    // This allows for multiple "sub programs" within a single Cobalt script
+}
