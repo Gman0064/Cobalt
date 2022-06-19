@@ -1,4 +1,4 @@
-package cobalt;
+package cobalt.lang;
 
 class Token {
     final TokenType type;

@@ -1,4 +1,4 @@
-package cobalt;
+package cobalt.lang;
 
 enum TokenType {
     // Single character tokens.

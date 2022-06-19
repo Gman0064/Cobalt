@@ -1,11 +1,11 @@
-package cobalt;
+package cobalt.lang;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static cobalt.TokenType.*;
+import static cobalt.lang.TokenType.*;
 
 class Scanner {
     private final String source;
@@ -46,7 +46,7 @@ class Scanner {
     List<Token> scanTokens() {
         while (!isAtEnd()) {
             start = current;
-            scanTokens();
+            scanToken();
         }
 
         tokens.add(new Token(EOF, "", null, line));
@@ -107,6 +107,10 @@ class Scanner {
                 line++;
                 break;
 
+            case '"':
+                string();
+                break;
+
             default:
                 if (isDigit(c)) {
                     // Check to see if our incoming value is part of a number
@@ -129,7 +133,7 @@ class Scanner {
 
 
     private void number() {
-        while (!isDigit(peek())) advance();
+        while (isDigit(peek())) advance();
 
         // Look for a decimal place.
         if (peek() == '.' && isDigit(peekNext())) {
@@ -177,7 +181,11 @@ class Scanner {
     // add it to the Token list if it is valid
     private void identifier() {
         while (isAlphaNumeric(peek())) advance();
-        addToken(IDENTIFIER);
+        
+        String text = source.substring(start, current);
+        TokenType type = keywords.get(text);
+        if (type == null) type = IDENTIFIER;
+        addToken(type);
     }
 
 
