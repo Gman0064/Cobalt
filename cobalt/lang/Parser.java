@@ -1,22 +1,27 @@
-///////////
-//
-//  Continue at page 89, Section 6.3
-//  
-///////////
-
-
 package cobalt.lang;
 
 import java.util.List;
 import static cobalt.lang.TokenType.*;
 
 class Parser {
+    private static class ParseError extends RuntimeException {}
+
     private final List<Token> tokens;
     private int current = 0;
 
     Parser(List<Token> tokens) {
         this.tokens = tokens;
     }
+
+
+    Expr parse() {
+        try {
+            return expression();
+        } catch (ParseError error) {
+            return null;
+        }
+    }
+
 
     private Expr expression() {
         return equality();
@@ -37,6 +42,7 @@ class Parser {
 
         return expr;
     }
+
 
     // Parser definition for handling comparisons
     //
@@ -80,7 +86,12 @@ class Parser {
         return expr;
     }
 
-
+    
+    // Parser definition for handling unary statements
+    //
+    // unary   ->  ( "!" | "-" ) unary
+    //             | primary ;
+    //
     private Expr unary() {
         if (match(BANG, MINUS)) {
             Token operator = previous();
@@ -92,6 +103,11 @@ class Parser {
     }
 
 
+    // Parser definition for handling primary statements
+    //
+    // primary   ->  NUMBER | STRING | "true" | "false" | "nil"
+    //             | "(" expression ")" ;
+    //
     private Expr primary() {
         if (match(FALSE)) return new Expr.Literal(false);
         if (match(TRUE)) return new Expr.Literal(true);
@@ -106,6 +122,8 @@ class Parser {
             consume(RIGHT_PAREN, "Expect ')' after expression.");
             return new Expr.Grouping(expr);
         }
+
+        throw error(peek(), "Expected expression.");
     }
 
 
@@ -120,6 +138,14 @@ class Parser {
             }
         }
         return false;
+    }
+
+
+    // Consume function
+    private Token consume(TokenType type, String message) {
+        if (check(type)) return advance();
+
+        throw error(peek(), message);
     }
 
 
@@ -153,7 +179,37 @@ class Parser {
     private Token previous() {
         return tokens.get(current - 1);
     }
-    
+
+
+    // Throw a new parse error based on the incorrect token
+    private ParseError error(Token token, String message) {
+        Cobalt.error(token, message);
+        return new ParseError();
+    }
+
+
+    // Once finding a parse error, discard the rest of the tokens in 
+    // a statement in order to prevent cascading errors.
+    private void synchronize() {
+        advance();
+        while (!isAtEnd()) {
+            if (previous().type == SEMICOLON) return;
+
+            switch (peek().type) {
+                case CLASS:
+                case FOR:
+                case FUNC:
+                case IF:
+                case PRINT:
+                case RETURN:
+                case VAR:
+                case WHILE:
+                return;
+            }
+
+            advance();
+        }
+    }
 }
 
 
