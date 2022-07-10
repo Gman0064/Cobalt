@@ -1,0 +1,5 @@
+print "These are statement tests for Cobalt!";
+print 10 + 12;
+print 13 + (14 - 7) * 3;
+print "Hello, " + "World!";
+print "String " + "Multiplication " * 3;
