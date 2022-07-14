@@ -100,6 +100,8 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 checkNumberOperand(expr.operator, right);
                 return (double) left - (double) right;
             case PLUS:
+                System.out.println("Left: " + left.getClass());
+                System.out.println("Right: " + right.getClass());
                 if (left instanceof Double && right instanceof Double) {
                     return (double) left + (double) right;
                 } else if (left instanceof String && right instanceof String) {

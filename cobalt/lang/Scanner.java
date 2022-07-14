@@ -115,7 +115,24 @@ class Scanner {
             default:
                 if (isDigit(c)) {
                     // Check to see if our incoming value is part of a number
-                    number();
+                    // Switch on base prefix (hex, binary, base10...)
+                    switch (peek()) {
+                        case 'x':
+                            advance(); // Advance to disregard the '0x' prefix
+                            hex();
+                            break;
+                        case 'b':
+                            advance(); // Advance to disregard the '0b' prefix
+                            binary();
+                            break;
+                        case 'o':
+                            advance(); // Advance to disregard the '0o' prefix
+                            octal();
+                            break;
+                        default:
+                            number();
+                            break;
+                    }
                 } else if (isAlpha(c)) {
                     // Check to see if our incoming value is part of
                     // a reserved word or identifier
@@ -127,12 +144,32 @@ class Scanner {
         }
     }
 
+
     // Determine if the char is a base 10 digit
     private boolean isDigit(char c) {
         return c >= '0' && c <= '9';
     }
 
 
+    // Determine if the character is a valid base 16 digit
+    private boolean isHex(char c) {
+        return (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
+    }
+
+
+    // Determine if the character is a valid base 16 digit
+    private boolean isBinary(char c) {
+        return (c >= '0' && c <= '1');
+    }
+
+
+    // Determine if the character is a valid base 8 digit
+    private boolean isOctal(char c) {
+        return (c >= '0' && c <= '7');
+    }
+
+
+    // Parse and tokenize the value as a base 10 number
     private void number() {
         while (isDigit(peek())) advance();
 
@@ -145,6 +182,30 @@ class Scanner {
         }
         
         addToken(NUMBER, Double.parseDouble(source.substring(start, current)));
+    }
+
+
+    // Parse and tokenize the value as a hexadecimal number, store in base 10
+    private void hex() {
+        while (isDigit(peek()) || isHex(peek())) advance();
+        
+        addToken(NUMBER, Long.parseLong(source.substring(start + 2, current), 16));
+    }
+
+
+    // Parse and tokenize the value as a binary number, store in base 10
+    private void binary() {
+        while (isBinary(peek())) advance();
+        
+        addToken(NUMBER, Long.parseLong(source.substring(start + 2, current), 2));
+    }
+
+
+    // Parse and tokenize the value as an octal number, store in base 10
+    private void octal() {
+        while (isOctal(peek())) advance();
+        
+        addToken(NUMBER, Long.parseLong(source.substring(start + 2, current), 8));
     }
 
 
