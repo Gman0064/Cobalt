@@ -1,13 +1,10 @@
-//
-//  Continue at Section 7.2.3
-//  Page 100
-//
-
 package cobalt.lang;
 
 import java.util.List;
 
 class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
+
+    private Environment environment = new Environment();
 
     void interpret(List<Stmt> statements) {
         try {
@@ -38,6 +35,19 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return null;
     }
 
+    @Override
+    public Object visitVarExpr(Expr.Variable expr) {
+        // TODO: Fix analogous variable issues
+        return environment.get(expr.name);
+        // Object var_value = environment.get(expr.name);
+        // if (var_value != null) {
+        //     return environment.get(expr.name);
+        // } else {
+        //     throw new RuntimeError(expr.name,
+        //         "Reference to undefined variable: '" + expr.name + "'.");
+        // }
+    }
+
     private boolean isTruthy(Object object) {
         if (object == null)
             return false;
@@ -59,6 +69,26 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         stmt.accept(this);
     }
 
+    private void executeBlock(List<Stmt> statements,
+                              Environment environment) {
+        Environment previous = this.environment;
+        try {
+            this.environment = environment;
+
+            for (Stmt statement : statements) {
+                execute(statement);
+            }
+        } finally {
+            this.environment = previous;
+        }
+    }
+
+    @Override
+    public Void visitBlockStmt(Stmt.Block stmt) {
+        executeBlock(stmt.statements, new Environment(environment));
+        return null;
+    }
+
     @Override
     public Void visitExpressionStmt(Stmt.Expression stmt) {
         evaluate(stmt.expression);
@@ -70,6 +100,28 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         Object value = evaluate(stmt.expression);
         System.out.println(stringify(value));
         return null;
+    }
+
+    @Override
+    public Void visitVarStmt(Stmt.Var stmt) {
+        Object value = null;
+        if (stmt.initializer != null) {
+            value = evaluate(stmt.initializer);
+        }
+
+        if (!stmt.nullable && value == null) {
+            throw new RuntimeError(stmt.name, "Assignment of 'nil' to non-nullable type");
+        } else {
+            environment.define(stmt.name, value);
+            return null;
+        }
+    }
+
+    @Override
+    public Object visitAssignExpr(Expr.Assign expr) {
+        Object value = evaluate(expr.value);
+        environment.assign(expr.name, value);
+        return value;
     }
 
     @Override
@@ -100,8 +152,6 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 checkNumberOperand(expr.operator, right);
                 return (double) left - (double) right;
             case PLUS:
-                System.out.println("Left: " + left.getClass());
-                System.out.println("Right: " + right.getClass());
                 if (left instanceof Double && right instanceof Double) {
                     return (double) left + (double) right;
                 } else if (left instanceof String && right instanceof String) {
@@ -110,8 +160,12 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     return (String) left + (Double) right;
                 } else if (left instanceof Double && right instanceof String) {
                     return (Double) left + (String) right;
+                } else if ((left == null) && right instanceof String) {
+                    return "nil" + (String) right;
+                } else if (left instanceof String && (right == null)) {
+                    return (String) left + "nil";
                 }
-                throw new RuntimeError(expr.operator, "Operands must be of type number or string");
+                throw new RuntimeError(expr.operator, "Invalid operands: '" + left + "' and '" + right + "'");
             case SLASH:
                 checkNumberOperands(expr.operator, left, right);
                 checkNumberOperand(expr.operator, right);

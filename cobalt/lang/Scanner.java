@@ -89,14 +89,15 @@ class Scanner {
             case '>':
                 addToken(match('=') ? GREATER_EQUAL : GREATER);
                 break;
-            case '/':
-                if (match('/')) {
-                    // A comment goes until the end of the line
-                    while (peek() != '\n' && !isAtEnd()) advance();
-                } else {
-                    addToken(SLASH);
-                }
+            case '/': addToken(SLASH); break;
+            case '?': addToken(NULLABLE); break;
+    
+            // Comments
+            case '#': 
+                // A comment goes until the end of the line
+                while (peek() != '\n' && !isAtEnd()) advance();
                 break;
+    
 
             // Whitespace and new lines
             case ' ':

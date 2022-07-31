@@ -22,6 +22,7 @@ public class Cobalt {
         } else if (args.length == 1) {
             runFile(args[0]);
         } else {
+            System.out.println("Cobalt v0.1.0");
             runPrompt();
         }
     }

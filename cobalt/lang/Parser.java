@@ -1,6 +1,9 @@
 package cobalt.lang;
 
 import java.util.List;
+
+import cobalt.lang.Expr.Variable;
+
 import java.util.ArrayList;
 import static cobalt.lang.TokenType.*;
 
@@ -18,7 +21,7 @@ class Parser {
     List<Stmt> parse() {
         List<Stmt> statements = new ArrayList<>();
         while (!isAtEnd()) {
-            statements.add(statement());
+            statements.add(declaration());
         }
 
         return statements;
@@ -26,12 +29,24 @@ class Parser {
 
 
     private Expr expression() {
-        return equality();
+        return assignment();
+    }
+
+
+    private Stmt declaration() {
+        try {
+            if (match(VAR)) return varDeclaration();
+            return statement();
+        } catch (ParseError error) {
+            synchronize();
+            return null;
+        }
     }
 
     
     private Stmt statement() {
         if (match(PRINT)) return printStatement();
+        if (match(LEFT_BRACE)) return new Stmt.Block(block());
 
         return expressionStatement();
     }
@@ -39,16 +54,71 @@ class Parser {
 
     private Stmt printStatement() {
         Expr value = expression();
-        consume(SEMICOLON, "Expect ';' after value.");
+        consume(SEMICOLON, "Expected ';' after value.");
         return new Stmt.Print(value);
     }
 
+
+    private Stmt varDeclaration() {
+        Token name = consume(IDENTIFIER, "Expected variable name.");
+
+        Expr initializer = null;
+        boolean nullable = false;
+        
+        if (match(NULLABLE)) {
+            nullable = true;
+        }
+
+        if (match(EQUAL)) {
+            initializer = expression();
+        }
+
+        consume(SEMICOLON, "Expected ';' after variable declaration.");
+
+        return new Stmt.Var(name, nullable, initializer);
+    }
+
+
     private Stmt expressionStatement() {
         Expr expr = expression();
-        consume(SEMICOLON, "Expect ';' after value.");
+        consume(SEMICOLON, "Expected ';' after value.");
         return new Stmt.Expression(expr);
     }
 
+
+    private List<Stmt> block() {
+        List<Stmt> statements = new ArrayList<>();
+
+        while (!check(RIGHT_BRACE) && !isAtEnd()) {
+            statements.add(declaration());
+        }
+
+        consume(RIGHT_BRACE, "Expected '}' after block.");
+        return statements;
+    }
+
+
+    private Expr assignment() {
+        Expr expr = equality();
+
+        if (match(EQUAL)) {
+            Token equals = previous();
+            Expr value = assignment();
+
+            if (expr instanceof Expr.Variable) {
+                Variable var = (Expr.Variable) expr;
+                Token name = var.name;
+                if (!var.nullable && value == null) {
+                    error(equals, "Invalid assignment of 'nil' on non-nullable type");
+                } else {
+                    return new Expr.Assign(name, value);
+                }
+            }
+            error(equals, "Invalid assignment on non-variable type");
+        }
+
+        return expr;
+    }
 
     // Parser definition for handling equalities
     //
@@ -137,6 +207,14 @@ class Parser {
 
         if (match(NUMBER, STRING)) {
             return new Expr.Literal(previous().literal);
+        }
+
+        if (match(IDENTIFIER)) {
+            if (match(NULLABLE)) {
+                return new Expr.Variable(previous(), true);
+            } else {
+                return new Expr.Variable(previous(), false);
+            }
         }
 
         if (match(LEFT_PAREN)) {
